@@ -1,26 +1,17 @@
-pub fn search<'a>(query: &'a str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = Vec::new();
-
-    for line in contents.lines() {
-        if line.contains(query) {
-            results.push(line);
-        }
-    }
-
-    results
+pub fn search<'a>(query: &'a str, contents: &'a str) -> Box<dyn Iterator<Item = &'a str> + 'a> {
+    Box::new(contents.lines().filter(move |line| line.contains(&query)))
 }
 
-pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+pub fn search_case_insensitive<'a>(
+    query: &'a str,
+    contents: &'a str,
+) -> Box<dyn Iterator<Item = &'a str> + 'a> {
     let query = query.to_lowercase();
-    let mut results = Vec::new();
-
-    for line in contents.lines() {
-        if line.to_lowercase().contains(&query) {
-            results.push(line);
-        }
-    }
-
-    results
+    Box::new(
+        contents
+            .lines()
+            .filter(move |line| line.to_lowercase().contains(&query)),
+    )
 }
 
 #[cfg(test)]
@@ -32,7 +23,10 @@ mod tests {
         let query = "duct";
         let contents = "Rust:\nsafe, fast, productive.\nPick three.\nDuct tape.";
 
-        assert_eq!(vec!["safe, fast, productive."], search(query, contents));
+        assert_eq!(
+            vec!["safe, fast, productive."],
+            search(query, contents).collect::<Vec<&str>>()
+        );
     }
 
     #[test]
@@ -42,7 +36,7 @@ mod tests {
 
         assert_eq!(
             vec!["Rust:", "Trust me."],
-            search_case_insensitive(query, contents)
+            search_case_insensitive(query, contents).collect::<Vec<&str>>()
         );
     }
 }
